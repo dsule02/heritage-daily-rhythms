@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bedtime-dark text-bedtime-text antialiased selection:bg-bedtime-amber/30;
+  }
+}
+
+/* Base custom classes */
+.tap-target {
+  @apply min-h-[44px] min-w-[44px];
+}
