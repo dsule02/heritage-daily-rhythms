@@ -1,6 +1,6 @@
-import { Metadata, Viewport } from 'next';
+import { MetadataRoute } from 'next'
 
-export default function manifest(): Metadata['manifest'] {
+export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Heritage: Daily Rhythms',
     short_name: 'Heritage',
