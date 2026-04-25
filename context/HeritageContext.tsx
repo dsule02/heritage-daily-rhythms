@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { AppState, Profile } from "@/types";
+import { AppState, Profile, SundayNote } from "@/types";
 
 interface HeritageContextType {
   state: AppState;
@@ -10,6 +10,7 @@ interface HeritageContextType {
   setActiveProfile: (profileId: string) => void;
   completeLesson: (lessonId: string) => void;
   getLast7DaysProgress: () => boolean[];
+  addSundayNote: (note: { topic: string; translation: string }) => void;
 }
 
 export const getDailyProverbLink = () => {
@@ -35,6 +36,7 @@ const initialState: AppState = {
     },
   },
   activeProfileId: "luka",
+  sundayNotes: [],
 };
 
 const HeritageContext = createContext<HeritageContextType | undefined>(undefined);
@@ -112,6 +114,18 @@ export function HeritageProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, activeProfileId: profileId }));
   };
 
+  const addSundayNote = (note: { topic: string; translation: string }) => {
+    const newNote: SundayNote = {
+      ...note,
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+    };
+    setState((prev) => ({
+      ...prev,
+      sundayNotes: [newNote, ...(prev.sundayNotes || [])],
+    }));
+  };
+
   const activeProfile = state.profiles[state.activeProfileId];
 
   return (
@@ -121,7 +135,8 @@ export function HeritageProvider({ children }: { children: React.ReactNode }) {
       activeProfile, 
       setActiveProfile, 
       completeLesson, 
-      getLast7DaysProgress 
+      getLast7DaysProgress,
+      addSundayNote
     }}>
       {children}
     </HeritageContext.Provider>

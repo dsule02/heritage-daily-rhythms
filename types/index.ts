@@ -9,9 +9,17 @@ export interface Profile {
   lastCompletionDate?: string;
 }
 
+export interface SundayNote {
+  id: string;
+  date: string;
+  topic: string;
+  translation: string;
+}
+
 export interface AppState {
   profiles: Record<string, Profile>;
   activeProfileId: string;
+  sundayNotes: SundayNote[];
 }
 
 export interface Lesson {
