@@ -16,6 +16,8 @@ const config: Config = {
           amber: "#ffbf00", // Brighter amber for highlights
           text: "#f5f5f0", // Soft off-white text
           muted: "#a3a3a3", // Muted text for secondary info
+          accent: "#2C5545", // Subtle dark green/teal accent
+          accentLight: "#3B6A56", // Lighter variant for fills
         },
       },
       minHeight: {
