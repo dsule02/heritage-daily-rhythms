@@ -1,9 +1,9 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/community/page": "app/community/page.js",
+  "/growth/page": "app/growth/page.js",
   "/page": "app/page.js",
+  "/learning/page": "app/learning/page.js",
   "/manifest.webmanifest/route": "app/manifest.webmanifest/route.js",
   "/sundays/page": "app/sundays/page.js",
-  "/learning/page": "app/learning/page.js",
-  "/growth/page": "app/growth/page.js"
+  "/community/page": "app/community/page.js"
 }
