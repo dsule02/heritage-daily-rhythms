@@ -1,17 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { AppState, Ritual, Child, SundayNote } from "@/types";
+import { AppState, Profile } from "@/types";
 
 interface HeritageContextType {
   state: AppState;
   isHydrated: boolean;
-  toggleRitual: (ritualId: string) => void;
-  getTodayCompletions: () => string[];
-  calculateStreak: () => number;
+  activeProfile: Profile;
+  setActiveProfile: (profileId: string) => void;
+  completeLesson: (lessonId: string) => void;
   getLast7DaysProgress: () => boolean[];
-  setActiveChild: (childId: string) => void;
-  addSundayNote: (note: Omit<SundayNote, "id" | "date">) => void;
 }
 
 export const getDailyProverbLink = () => {
@@ -19,28 +17,24 @@ export const getDailyProverbLink = () => {
   return `https://www.bible.com/bible/111/PRO.${day}.NIV`;
 };
 
-const defaultRituals: Ritual[] = [
-  { id: "m1", title: "Morning Affirmation", timeOfDay: "morning" },
-  { id: "m2", title: "Read a Proverb", timeOfDay: "morning", actionLink: getDailyProverbLink() },
-  { id: "m3", title: "Pray for the day", timeOfDay: "morning" },
-  { id: "e1", title: "Read Bible Storybook", timeOfDay: "evening" },
-  { id: "e2", title: "Sing Amazing Grace", timeOfDay: "evening" },
-  { id: "e3", title: "Sing Jesus Loves Me", timeOfDay: "evening" },
-  { id: "e4", title: "The Blessing Prayer", timeOfDay: "evening" },
-  { id: "e5", title: "Teach Faith Foundation", timeOfDay: "evening", moduleId: "module_1" },
-];
-
-const defaultChildren: Child[] = [
-  { id: "c1", name: "Luka", age: 3 },
-  { id: "c2", name: "Mila", age: 0 }, // Age 0 for Infant
-];
-
 const initialState: AppState = {
-  children: defaultChildren,
-  activeChildId: "c1",
-  dailyRituals: defaultRituals,
-  completions: {},
-  sundayNotes: [],
+  profiles: {
+    luka: {
+      name: "Luka",
+      ageCategory: "child",
+      currentDay: 1,
+      completedLessons: [],
+      streak: 0,
+    },
+    mila: {
+      name: "Mila",
+      ageCategory: "toddler",
+      currentDay: 1,
+      completedLessons: [],
+      streak: 0,
+    },
+  },
+  activeProfileId: "luka",
 };
 
 const HeritageContext = createContext<HeritageContextType | undefined>(undefined);
@@ -50,17 +44,11 @@ export function HeritageProvider({ children }: { children: React.ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Hydration: load from localStorage on mount
-    const stored = localStorage.getItem("heritage_state");
+    const stored = localStorage.getItem("heritage_state_v2");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Merge stored state with defaults to ensure we have rituals if missing
-        setState({
-          ...initialState,
-          ...parsed,
-          dailyRituals: parsed.dailyRituals?.length ? parsed.dailyRituals : defaultRituals,
-        });
+        setState(parsed);
       } catch (e) {
         console.error("Failed to parse localStorage state", e);
       }
@@ -69,107 +57,72 @@ export function HeritageProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Save to localStorage whenever state changes, but only after initial hydration
     if (isHydrated) {
-      localStorage.setItem("heritage_state", JSON.stringify(state));
+      localStorage.setItem("heritage_state_v2", JSON.stringify(state));
     }
   }, [state, isHydrated]);
 
   const getTodayDateString = () => {
-    // Returns local date string in YYYY-MM-DD format
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   };
 
-  const toggleRitual = (ritualId: string) => {
+  const completeLesson = (lessonId: string) => {
     const today = getTodayDateString();
     
-    setState((prev: AppState) => {
-      const todayCompletions = prev.completions[today] || [];
-      const isCompleted = todayCompletions.includes(ritualId);
+    setState((prev) => {
+      const profile = prev.profiles[prev.activeProfileId];
+      if (!profile) return prev;
       
-      const newCompletions = isCompleted
-        ? todayCompletions.filter((id: string) => id !== ritualId)
-        : [...todayCompletions, ritualId];
-        
+      const isAlreadyCompletedToday = profile.lastCompletionDate === today;
+      const isLessonAlreadyCompleted = profile.completedLessons.includes(lessonId);
+
+      const newStreak = isAlreadyCompletedToday ? profile.streak : profile.streak + 1;
+
       return {
         ...prev,
-        completions: {
-          ...prev.completions,
-          [today]: newCompletions,
+        profiles: {
+          ...prev.profiles,
+          [prev.activeProfileId]: {
+            ...profile,
+            currentDay: profile.currentDay + 1,
+            completedLessons: isLessonAlreadyCompleted ? profile.completedLessons : [...profile.completedLessons, lessonId],
+            streak: newStreak,
+            lastCompletionDate: today,
+          },
         },
       };
     });
   };
 
-  const getTodayCompletions = () => {
-    const today = getTodayDateString();
-    return state.completions[today] || [];
-  };
-
-  const getPastDateString = (daysAgo: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() - daysAgo);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-
-  const isDayCompleted = (dateStr: string) => {
-    const eveningRitualIds = state.dailyRituals
-      .filter((r) => r.timeOfDay === "evening")
-      .map((r) => r.id);
-    const dayCompletions = state.completions[dateStr] || [];
-    return eveningRitualIds.some((id) => dayCompletions.includes(id));
-  };
-
-  const calculateStreak = () => {
-    let currentStreak = 0;
-    let daysAgo = 0;
-    
-    if (isDayCompleted(getPastDateString(0))) {
-      currentStreak++;
-      daysAgo = 1;
-    } else {
-      daysAgo = 1;
-    }
-
-    while (true) {
-      if (isDayCompleted(getPastDateString(daysAgo))) {
-        currentStreak++;
-        daysAgo++;
-      } else {
-        break;
-      }
-    }
-    
-    return currentStreak;
-  };
-
   const getLast7DaysProgress = () => {
+    // This is a simplified mock for the UI since we are just tracking lastCompletionDate right now.
+    // In a real app we'd track history of completions. We'll just return some true/false array based on streak for demo.
+    const activeProfile = state.profiles[state.activeProfileId];
+    if (!activeProfile) return Array(7).fill(false);
+    
     const progress = [];
     for (let i = 6; i >= 0; i--) {
-      progress.push(isDayCompleted(getPastDateString(i)));
+      progress.push(i < activeProfile.streak);
     }
     return progress;
   };
 
-  const setActiveChild = (childId: string) => {
-    setState((prev) => ({ ...prev, activeChildId: childId }));
+  const setActiveProfile = (profileId: string) => {
+    setState((prev) => ({ ...prev, activeProfileId: profileId }));
   };
 
-  const addSundayNote = (note: Omit<SundayNote, "id" | "date">) => {
-    const newNote: SundayNote = {
-      ...note,
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-    };
-    setState((prev) => ({
-      ...prev,
-      sundayNotes: [newNote, ...(prev.sundayNotes || [])],
-    }));
-  };
+  const activeProfile = state.profiles[state.activeProfileId];
 
   return (
-    <HeritageContext.Provider value={{ state, isHydrated, toggleRitual, getTodayCompletions, calculateStreak, getLast7DaysProgress, setActiveChild, addSundayNote }}>
+    <HeritageContext.Provider value={{ 
+      state, 
+      isHydrated, 
+      activeProfile, 
+      setActiveProfile, 
+      completeLesson, 
+      getLast7DaysProgress 
+    }}>
       {children}
     </HeritageContext.Provider>
   );

@@ -15,7 +15,7 @@ export default function BottomNav() {
 
   const navItems = [
     { name: "Today", href: "/", icon: Home },
-    { name: "Modules", href: "/modules", icon: BookOpen },
+    { name: "Modules", href: "/learning", icon: BookOpen },
     { name: "Growth", href: "/growth", icon: Activity },
     { name: "Community", href: "/community", icon: Users },
   ];

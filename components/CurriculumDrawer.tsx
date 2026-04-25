@@ -1,109 +1,107 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { useHeritage } from "@/context/HeritageContext";
+import { X, CheckCircle2 } from "lucide-react";
 import curriculumData from "@/data/curriculum.json";
-import { clsx } from "clsx";
+import { Curriculum } from "@/types";
 
-interface Module {
-  id: string;
-  title: string;
-  theme: string;
-  targetAge: string;
-  talkingPoints: string[];
-}
+const curriculum = curriculumData.curriculum as unknown as Curriculum;
 
-interface CurriculumDrawerProps {
-  moduleId: string | null;
+export interface CurriculumDrawerProps {
+  lessonId: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function CurriculumDrawer({ moduleId, isOpen, onClose }: CurriculumDrawerProps) {
-  const [moduleData, setModuleData] = useState<Module | null>(null);
+export default function CurriculumDrawer({ lessonId, isOpen, onClose }: CurriculumDrawerProps) {
+  const { activeProfile, completeLesson } = useHeritage();
 
-  useEffect(() => {
-    if (moduleId) {
-      const data = curriculumData.find((m) => m.id === moduleId);
-      if (data) setModuleData(data as Module);
+  if (!isOpen || !lessonId) return null;
+
+  // Find the lesson
+  let activeLesson = null;
+  let activeChapterTitle = "";
+  for (const [chapId, chapter] of Object.entries(curriculum)) {
+    const lesson = chapter.lessons.find((l) => l.id === lessonId);
+    if (lesson) {
+      activeLesson = lesson;
+      activeChapterTitle = chapter.title;
+      break;
     }
-  }, [moduleId]);
+  }
 
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
+  if (!activeLesson) return null;
 
-  if (!isOpen) return null;
+  const handleComplete = () => {
+    completeLesson(activeLesson.id);
+    onClose();
+  };
 
   return (
-    <>
-      <div 
-        className="fixed inset-0 bg-black/60 z-40 transition-opacity backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      <div 
-        className={clsx(
-          "fixed bottom-0 left-0 right-0 z-50 bg-bedtime-surface rounded-t-3xl border-t border-bedtime-muted/20 shadow-2xl transition-transform transform duration-300 ease-out max-h-[85vh] flex flex-col",
-          isOpen ? "translate-y-0" : "translate-y-full"
-        )}
-      >
-        <div className="flex justify-center p-3" onClick={onClose}>
-          <div className="w-12 h-1.5 bg-bedtime-muted/30 rounded-full" />
-        </div>
+    <div className="fixed inset-0 bg-black/90 z-50 flex flex-col justify-end">
+      <div className="bg-gray-900 w-full h-[90vh] rounded-t-3xl overflow-hidden flex flex-col relative">
         
-        {moduleData && (
-          <div className="px-6 pb-12 overflow-y-auto">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="text-sm font-semibold text-bedtime-gold tracking-wider uppercase mb-1">
-                  {moduleData.title}
-                </h2>
-                <h3 className="text-2xl font-bold text-bedtime-text">
-                  {moduleData.theme}
-                </h3>
-              </div>
-              <button 
-                onClick={onClose}
-                className="p-2 bg-bedtime-muted/10 rounded-full text-bedtime-muted hover:text-bedtime-text transition-colors"
-                aria-label="Close drawer"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="space-y-4 mt-8">
-              <h4 className="font-medium text-bedtime-muted uppercase text-xs tracking-widest mb-4">
-                Talking Points
-              </h4>
-              <ul className="space-y-4">
-                {moduleData.talkingPoints.map((point, index) => (
-                  <li key={index} className="flex gap-4 items-start">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-bedtime-gold/10 text-bedtime-gold text-sm font-medium shrink-0 mt-0.5">
-                      {index + 1}
-                    </span>
-                    <p className="text-bedtime-text leading-relaxed">
-                      {point}
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-800 pt-safe">
+          <div>
+            <span className="text-amber-500 text-xs font-semibold uppercase tracking-widest block mb-1">
+              {activeChapterTitle}
+            </span>
+            <h2 className="text-xl font-serif text-white">
+              Day {activeLesson.unlockDay}: {activeLesson.title}
+            </h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-3 bg-gray-800 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-95"
+          >
+            <X size={20} className="text-gray-400" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 pb-safe">
+          
+          <div className="mb-8">
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Core Truths</h3>
+            <ul className="space-y-4">
+              {activeLesson.coreTruths.map((truth, idx) => {
+                return (
+                  <li key={idx} className="flex gap-4">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2.5 shrink-0" />
+                    <p className="text-gray-200 leading-relaxed text-lg font-serif">
+                      {truth}
                     </p>
                   </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className="mt-10 p-4 rounded-xl bg-bedtime-gold/5 border border-bedtime-gold/10">
-              <p className="text-sm text-bedtime-muted text-center">
-                Target Age: <span className="font-medium text-bedtime-gold">{moduleData.targetAge}</span>
-              </p>
-            </div>
+                );
+              })}
+            </ul>
           </div>
-        )}
+
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 mb-8">
+            <h3 className="text-xs font-semibold text-amber-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+              The Basics
+            </h3>
+            <p className="text-amber-100/90 leading-relaxed text-lg font-serif">
+              {activeLesson.ageCallout.basics}
+            </p>
+          </div>
+
+          {/* Footer Citation */}
+          <p className="text-xs text-gray-600 text-center italic mb-12">
+            Source: Orthodox Catechism: Basic Teachings of the Orthodox Faith | Greek Orthodox Archdiocese of Canada
+          </p>
+
+          <button
+            onClick={handleComplete}
+            className="w-full bg-amber-500 text-gray-900 font-bold py-4 rounded-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform min-h-[44px]"
+          >
+            <CheckCircle2 size={20} />
+            Complete Lesson
+          </button>
+        </div>
+
       </div>
-    </>
+    </div>
   );
 }

@@ -1,35 +1,34 @@
-export interface Child {
-  id: string;
+export type AgeCategory = "child" | "toddler";
+
+export interface Profile {
   name: string;
-  age: number;
-}
-
-export type TimeOfDay = 'morning' | 'evening';
-
-export interface Ritual {
-  id: string;
-  title: string;
-  timeOfDay: TimeOfDay;
-  actionLink?: string;
-  moduleId?: string;
-}
-
-export interface CompletionState {
-  // Key is date string (YYYY-MM-DD), value is array of completed ritual IDs
-  [date: string]: string[];
-}
-
-export interface SundayNote {
-  id: string;
-  date: string;
-  topic: string;
-  translation: string;
+  ageCategory: AgeCategory;
+  currentDay: number;
+  completedLessons: string[];
+  streak: number;
+  lastCompletionDate?: string;
 }
 
 export interface AppState {
-  children: Child[];
-  activeChildId?: string;
-  dailyRituals: Ritual[];
-  completions: CompletionState;
-  sundayNotes: SundayNote[];
+  profiles: Record<string, Profile>;
+  activeProfileId: string;
+}
+
+export interface Lesson {
+  id: string;
+  unlockDay: number;
+  title: string;
+  coreTruths: string[];
+  ageCallout: {
+    basics: string;
+  };
+}
+
+export interface Chapter {
+  title: string;
+  lessons: Lesson[];
+}
+
+export interface Curriculum {
+  [chapterId: string]: Chapter;
 }
