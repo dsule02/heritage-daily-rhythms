@@ -10,6 +10,7 @@ interface HeritageContextType {
   setActiveProfile: (profileId: string) => void;
   completeLesson: (lessonId: string) => void;
   getLast7DaysProgress: () => boolean[];
+  calculateStreak: () => number;
   addSundayNote: (note: { topic: string; translation: string }) => void;
 }
 
@@ -128,6 +129,10 @@ export function HeritageProvider({ children }: { children: React.ReactNode }) {
 
   const activeProfile = state.profiles[state.activeProfileId];
 
+  const calculateStreak = () => {
+    return activeProfile?.streak || 0;
+  };
+
   return (
     <HeritageContext.Provider value={{ 
       state, 
@@ -136,6 +141,7 @@ export function HeritageProvider({ children }: { children: React.ReactNode }) {
       setActiveProfile, 
       completeLesson, 
       getLast7DaysProgress,
+      calculateStreak,
       addSundayNote
     }}>
       {children}
