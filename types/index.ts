@@ -40,3 +40,13 @@ export interface Chapter {
 export interface Curriculum {
   [chapterId: string]: Chapter;
 }
+
+export type TimeOfDay = 'morning' | 'evening';
+
+export interface Ritual {
+  id: string;
+  title: string;
+  timeOfDay: TimeOfDay;
+  actionLink?: string;
+  moduleId?: string;
+}
